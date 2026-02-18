@@ -71,13 +71,12 @@
 
         .grade-display {
             display: flex;
-            gap: 20px;
+            justify-content: center;
             margin-bottom: 30px;
         }
 
         .grade-box {
-            flex: 1;
-            padding: 20px;
+            padding: 20px 40px;
             border-radius: 15px;
             text-align: center;
             color: white;
@@ -86,10 +85,6 @@
 
         .current-grade {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .max-grade {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
         .grade-label {
@@ -157,12 +152,12 @@
             display: grid;
             grid-template-columns: 2fr 1fr 1fr auto;
             gap: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
             align-items: center;
         }
 
         .item-name {
-            padding: 10px;
+            padding: 12px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 0.95rem;
@@ -175,7 +170,7 @@
         }
 
         .item-marks, .item-max {
-            padding: 10px;
+            padding: 12px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 0.95rem;
@@ -626,16 +621,11 @@
             const structure = defaultStructures[subject.id];
             
             const currentGrade = calculateSubjectGrade(structure, subjectData);
-            const maxGrade = calculateMaxGrade(structure, subjectData);
 
             gradeDisplay.innerHTML = `
                 <div class="grade-box current-grade">
                     <div class="grade-label">Current Grade</div>
                     <div class="grade-value">${currentGrade !== null ? currentGrade.toFixed(2) + '%' : 'N/A'}</div>
-                </div>
-                <div class="grade-box max-grade">
-                    <div class="grade-label">Highest Possible</div>
-                    <div class="grade-value">${maxGrade.toFixed(2)}%</div>
                 </div>
             `;
             card.appendChild(gradeDisplay);
@@ -789,16 +779,11 @@
                 const structure = defaultStructures[subject.id];
                 
                 const currentGrade = calculateSubjectGrade(structure, subjectData);
-                const maxGrade = calculateMaxGrade(structure, subjectData);
 
                 gradeDisplay.innerHTML = `
                     <div class="grade-box current-grade">
                         <div class="grade-label">Current Grade</div>
                         <div class="grade-value">${currentGrade !== null ? currentGrade.toFixed(2) + '%' : 'N/A'}</div>
-                    </div>
-                    <div class="grade-box max-grade">
-                        <div class="grade-label">Highest Possible</div>
-                        <div class="grade-value">${maxGrade.toFixed(2)}%</div>
                     </div>
                 `;
             });
