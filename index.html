@@ -279,56 +279,58 @@
         const defaultStructures = {
             chemistry: [
                 { 
-                    name: 'Term Work', 
-                    weight: 70, 
-                    subcategories: [
-                        { name: 'Tests and Quizzes', weight: 40 },
-                        { name: 'Assignments and Labs', weight: 30 }
-                    ]
+                    name: 'Tests', 
+                    weight: 40, 
+                    subcategories: []
                 },
                 { 
-                    name: 'Summative', 
+                    name: 'Labs/Assignments', 
                     weight: 30, 
-                    subcategories: [
-                        { name: 'Lab Exam', weight: 10 },
-                        { name: 'Written Exam', weight: 20 }
-                    ]
+                    subcategories: []
+                },
+                { 
+                    name: 'Final Exam', 
+                    weight: 30, 
+                    subcategories: []
                 }
             ],
             calculus: [
                 { 
-                    name: 'Term Work', 
-                    weight: 70, 
-                    subcategories: [
-                        { name: 'Tests and Quizzes', weight: 40 },
-                        { name: 'Assignments and Labs', weight: 30 }
-                    ]
+                    name: 'Tests', 
+                    weight: 50, 
+                    subcategories: []
                 },
                 { 
-                    name: 'Summative', 
+                    name: 'Quizzes', 
+                    weight: 20, 
+                    subcategories: []
+                },
+                { 
+                    name: 'Final Exam', 
                     weight: 30, 
-                    subcategories: [
-                        { name: 'Lab Exam', weight: 10 },
-                        { name: 'Written Exam', weight: 20 }
-                    ]
+                    subcategories: []
                 }
             ],
             physics: [
                 { 
-                    name: 'Term Work', 
-                    weight: 70, 
-                    subcategories: [
-                        { name: 'Tests and Quizzes', weight: 40 },
-                        { name: 'Assignments and Labs', weight: 30 }
-                    ]
+                    name: 'Quizzes', 
+                    weight: 10, 
+                    subcategories: []
                 },
                 { 
-                    name: 'Summative', 
+                    name: 'Tests', 
                     weight: 30, 
-                    subcategories: [
-                        { name: 'Lab Exam', weight: 10 },
-                        { name: 'Written Exam', weight: 20 }
-                    ]
+                    subcategories: []
+                },
+                { 
+                    name: 'Lab Eval', 
+                    weight: 30, 
+                    subcategories: []
+                },
+                { 
+                    name: 'Final Exam', 
+                    weight: 30, 
+                    subcategories: []
                 }
             ]
         };
@@ -402,6 +404,9 @@
                     if (subTotalWeight > 0) {
                         categoryGrade = subTotalWeighted / subTotalWeight;
                     }
+                } else {
+                    // Category has items directly (no subcategories)
+                    categoryGrade = calculateSubcategoryGrade(categoryData?.items);
                 }
 
                 if (categoryGrade !== null) {
@@ -448,7 +453,14 @@
                         categoryGrade = 100;
                     }
                 } else {
-                    categoryGrade = 100;
+                    // Category has items directly (no subcategories)
+                    const subGrade = calculateSubcategoryGrade(categoryData?.items);
+                    if (subGrade !== null) {
+                        categoryGrade = subGrade;
+                    } else {
+                        // No data yet - assume 100%
+                        categoryGrade = 100;
+                    }
                 }
 
                 totalWeighted += categoryGrade * category.weight;
@@ -536,10 +548,60 @@
             categoryDiv.appendChild(header);
 
             if (category.subcategories && category.subcategories.length > 0) {
+                // Category has subcategories
                 category.subcategories.forEach(subCategory => {
                     const subData = categoryData?.[subCategory.name];
                     categoryDiv.appendChild(renderSubcategory(subCategory, subData, subjectId, category.name));
                 });
+            } else {
+                // Category has items directly (no subcategories)
+                const itemsContainer = document.createElement('div');
+                itemsContainer.className = 'items-container';
+                
+                const items = categoryData?.items || [];
+                
+                if (items.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'empty-state';
+                    empty.textContent = 'No items yet. Click "Add Item" below.';
+                    itemsContainer.appendChild(empty);
+                } else {
+                    items.forEach((item, index) => {
+                        const row = document.createElement('div');
+                        row.className = 'item-row';
+                        row.innerHTML = `
+                            <input type="text" class="item-name" placeholder="Item name" value="${item.name || ''}" 
+                                   data-subject="${subjectId}" 
+                                   data-category="${category.name}" 
+                                   data-subcategory="" 
+                                   data-index="${index}">
+                            <input type="number" class="item-marks" placeholder="Marks" value="${item.marks || ''}" 
+                                   data-subject="${subjectId}" 
+                                   data-category="${category.name}" 
+                                   data-subcategory="" 
+                                   data-index="${index}" step="0.01" min="0">
+                            <input type="number" class="item-max" placeholder="Max" value="${item.max || ''}" 
+                                   data-subject="${subjectId}" 
+                                   data-category="${category.name}" 
+                                   data-subcategory="" 
+                                   data-index="${index}" step="0.01" min="0">
+                            <button class="btn-remove" 
+                                    data-subject="${subjectId}" 
+                                    data-category="${category.name}" 
+                                    data-subcategory="" 
+                                    data-index="${index}">Remove</button>
+                        `;
+                        itemsContainer.appendChild(row);
+                    });
+                }
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn-add';
+                addBtn.textContent = `+ Add Item to ${category.name}`;
+                addBtn.onclick = () => addItem(subjectId, category.name, '');
+                itemsContainer.appendChild(addBtn);
+                
+                categoryDiv.appendChild(itemsContainer);
             }
 
             return categoryDiv;
@@ -610,14 +672,24 @@
             const data = loadData();
             if (!data[subjectId]) data[subjectId] = {};
             if (!data[subjectId][categoryName]) data[subjectId][categoryName] = {};
-            if (!data[subjectId][categoryName][subCategoryName]) {
-                data[subjectId][categoryName][subCategoryName] = { items: [] };
-            }
-            if (!data[subjectId][categoryName][subCategoryName].items) {
-                data[subjectId][categoryName][subCategoryName].items = [];
+            
+            if (subCategoryName && subCategoryName !== '') {
+                // Item belongs to a subcategory
+                if (!data[subjectId][categoryName][subCategoryName]) {
+                    data[subjectId][categoryName][subCategoryName] = { items: [] };
+                }
+                if (!data[subjectId][categoryName][subCategoryName].items) {
+                    data[subjectId][categoryName][subCategoryName].items = [];
+                }
+                data[subjectId][categoryName][subCategoryName].items.push({ name: '', marks: '', max: '' });
+            } else {
+                // Item belongs directly to category (no subcategory)
+                if (!data[subjectId][categoryName].items) {
+                    data[subjectId][categoryName].items = [];
+                }
+                data[subjectId][categoryName].items.push({ name: '', marks: '', max: '' });
             }
             
-            data[subjectId][categoryName][subCategoryName].items.push({ name: '', marks: '', max: '' });
             saveData(data);
             updateGrades();
             // Re-render the subject
@@ -641,14 +713,27 @@
             const data = loadData();
             if (!data[subjectId]) data[subjectId] = {};
             if (!data[subjectId][categoryName]) data[subjectId][categoryName] = {};
-            if (!data[subjectId][categoryName][subCategoryName]) {
-                data[subjectId][categoryName][subCategoryName] = { items: [] };
-            }
-            if (!data[subjectId][categoryName][subCategoryName].items[index]) {
-                data[subjectId][categoryName][subCategoryName].items[index] = {};
+            
+            if (subCategoryName && subCategoryName !== '') {
+                // Item belongs to a subcategory
+                if (!data[subjectId][categoryName][subCategoryName]) {
+                    data[subjectId][categoryName][subCategoryName] = { items: [] };
+                }
+                if (!data[subjectId][categoryName][subCategoryName].items[index]) {
+                    data[subjectId][categoryName][subCategoryName].items[index] = {};
+                }
+                data[subjectId][categoryName][subCategoryName].items[index][field] = input.value;
+            } else {
+                // Item belongs directly to category (no subcategory)
+                if (!data[subjectId][categoryName].items) {
+                    data[subjectId][categoryName].items = [];
+                }
+                if (!data[subjectId][categoryName].items[index]) {
+                    data[subjectId][categoryName].items[index] = {};
+                }
+                data[subjectId][categoryName].items[index][field] = input.value;
             }
             
-            data[subjectId][categoryName][subCategoryName].items[index][field] = input.value;
             saveData(data);
         }
 
@@ -660,18 +745,34 @@
             const index = parseInt(button.dataset.index);
             
             const data = loadData();
-            if (data[subjectId] && 
-                data[subjectId][categoryName] && 
-                data[subjectId][categoryName][subCategoryName] &&
-                data[subjectId][categoryName][subCategoryName].items) {
-                data[subjectId][categoryName][subCategoryName].items.splice(index, 1);
-                saveData(data);
-                // Re-render the subject
-                const card = document.getElementById(`subject-${subjectId}`);
-                if (card) {
-                    const subject = subjects.find(s => s.id === subjectId);
-                    const newCard = renderSubject(subject);
-                    card.parentNode.replaceChild(newCard, card);
+            if (!data[subjectId] || !data[subjectId][categoryName]) return;
+            
+            if (subCategoryName && subCategoryName !== '') {
+                // Item belongs to a subcategory
+                if (data[subjectId][categoryName][subCategoryName] &&
+                    data[subjectId][categoryName][subCategoryName].items) {
+                    data[subjectId][categoryName][subCategoryName].items.splice(index, 1);
+                    saveData(data);
+                    // Re-render the subject
+                    const card = document.getElementById(`subject-${subjectId}`);
+                    if (card) {
+                        const subject = subjects.find(s => s.id === subjectId);
+                        const newCard = renderSubject(subject);
+                        card.parentNode.replaceChild(newCard, card);
+                    }
+                }
+            } else {
+                // Item belongs directly to category (no subcategory)
+                if (data[subjectId][categoryName].items) {
+                    data[subjectId][categoryName].items.splice(index, 1);
+                    saveData(data);
+                    // Re-render the subject
+                    const card = document.getElementById(`subject-${subjectId}`);
+                    if (card) {
+                        const subject = subjects.find(s => s.id === subjectId);
+                        const newCard = renderSubject(subject);
+                        card.parentNode.replaceChild(newCard, card);
+                    }
                 }
             }
         }
