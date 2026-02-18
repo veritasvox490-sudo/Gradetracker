@@ -13,10 +13,12 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #667eea;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
             color: #333;
+            margin: 0;
         }
 
         .container {
@@ -259,9 +261,17 @@
     </style>
 </head>
 <body>
+    <noscript>
+        <div style="color: white; text-align: center; padding: 50px;">
+            <h1>JavaScript Required</h1>
+            <p>Please enable JavaScript to use the Grade Calculator.</p>
+        </div>
+    </noscript>
     <div class="container">
-        <h1>📚 Grade Calculator</h1>
-        <div class="subjects-grid" id="subjectsGrid"></div>
+        <h1>Grade Calculator</h1>
+        <div class="subjects-grid" id="subjectsGrid">
+            <div style="color: white; text-align: center; padding: 20px;">Loading...</div>
+        </div>
     </div>
 
     <script>
@@ -695,13 +705,45 @@
 
         // Initialize
         function init() {
-            const grid = document.getElementById('subjectsGrid');
-            subjects.forEach(subject => {
-                grid.appendChild(renderSubject(subject));
-            });
+            try {
+                console.log('Initializing grade calculator...');
+                const grid = document.getElementById('subjectsGrid');
+                if (!grid) {
+                    console.error('subjectsGrid element not found');
+                    document.body.innerHTML = '<div style="color: white; padding: 20px; text-align: center; background: #667eea; min-height: 100vh;"><h1>Error: Could not find container</h1><p>Please refresh the page.</p></div>';
+                    return;
+                }
+                
+                // Clear loading message
+                grid.innerHTML = '';
+                
+                console.log('Rendering subjects...');
+                subjects.forEach(subject => {
+                    try {
+                        const subjectCard = renderSubject(subject);
+                        grid.appendChild(subjectCard);
+                    } catch (err) {
+                        console.error('Error rendering subject:', subject.name, err);
+                    }
+                });
+                console.log('Grade calculator initialized successfully');
+            } catch (error) {
+                console.error('Error initializing grade calculator:', error);
+                console.error('Stack trace:', error.stack);
+                document.body.innerHTML = '<div style="color: white; padding: 20px; text-align: center; background: #667eea; min-height: 100vh;"><h1>Error loading grade calculator</h1><p>Please check the browser console (F12) for details.</p><p>Error: ' + error.message + '</p></div>';
+            }
         }
 
-        init();
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM loaded, initializing...');
+                init();
+            });
+        } else {
+            console.log('DOM already ready, initializing...');
+            init();
+        }
     </script>
 </body>
 </html>
